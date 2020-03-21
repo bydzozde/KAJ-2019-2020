@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destroy the virus Game</title>
+    <style>
+        body {
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        }
+
+        #playground {
+            border: 1px solid #a0a0a0;
+            width: 600px;
+            height: 500px;
+            position: relative;
+        }
+        #world {
+            position: absolute;
+            bottom: 0px;
+            cursor: none;
+        }
+        #overlay {
+            position: absolute;
+            bottom: 0px;
+            height: 400px;
+            width: 0px;
+            background-color: rgba(255,0,0,.5);
+            cursor: none;
+        }
+
+        #info * {
+            display: inline;
+        }
+
+        #go {
+            position: relative;
+            top: 200px;
+            margin: 0 auto;
+            padding: 10px;
+            width:200px;
+            text-align: center;
+            border: 1px solid red;
+            background-color: #a00000;;
+            color: #fff;
+            visibility: hidden;
+        }
+
+        #gw {
+            position: relative;
+            top: 300px;
+            margin: 0 auto;
+            padding: 10px;
+            width:200px;
+            text-align: center;
+            border: 1px solid green;
+            background-color: #00a000;;
+            color: #fff;
+            visibility: hidden;
+        }
+
+        #score {
+            visibility: hidden;
+        }
+
+        #vir {
+            position: absolute;
+            top:150px;
+            left:300px;
+            background: url(coronaNew.png) no-repeat;
+            background-size: cover;
+            width: 50px;
+            height: 50px;
+            cursor: none;
+            visibility: hidden;
+        }
+        #player {
+            position: absolute;
+            top:150px;
+            left:400px;
+            background: url(tercNew.png) no-repeat;
+            background-size: cover;
+            width: 50px;
+            height: 50px;
+            cursor: none;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Game: Destroy the virus</h2>
+
+<h3>Popis</h3>
+<p>
+    Cílem hry je získat co nejvíce bodů střílením virů.
+    Za každé úspěšné sestřelení viru se přičte 1 bod.
+    Za každý nesestřelený vir nebo za nepřesnou střelbu se překryje část mapy.
+    Hra skončí, když se celá mapa překryje, nebo po manuálním ukončení.
+</p>
+<h4>Ovládání</h4>
+<p>
+    Pohyb: WSAD/myš, Střílení: Mezerník, Konec hry: Escape
+</p>
+<div id='playground'>
+    <div id="info">
+        <button id="newGameButton">New Game</button>
+        <button id="restartButton">Restart</button>
+        <div id="score"> Score: 0</div>
+    </div>
+    <img id="world" src="earthMap.jpg" width="600" alt="Map of the Earth">
+    <div id="overlay"></div>
+    <div id="player"></div>
+    <div id=go>GAME OVER</div>
+    <div id="gw"></div>
+    <div id="vir"></div>
+</div>
+<footer>&copy; Zdeněk Byžovský 2020</footer>
+
+<script>
+    class Player {
+        constructor(x, y, game) {
+            this._element = document.getElementById("player");
+            this._posx = x;
+            this._posy = y;
+            this._score = 0;
+            this._game = game;
+        }
+
+        handleEvent(event) {
+            if (this._game.isInGame()) {
+                if (event.key === 'a') {
+                    this.move(0);
+                } else if (event.key === 'd') {
+                    this.move(1);
+                } else if (event.key === 'w') {
+                    this.move(2);
+                } else if (event.key === 's') {
+                    this.move(3);
+                } else if (event.key === ' ') {
+                    this.checkCollision();
+                } else if (event.key === 'Escape') {
+                    this._game.gameOver();
+                }
+            }
+        }
+        update () {
+            this._element.style.left =  this._posx + 'px';
+            this._element.style.top = this._posy + 'px';
+        }
+        moveLeft () {
+            if (this._posx >= 5) {
+                this._posx = this._posx - 5;
+            }
+            this.update();
+        }
+        moveRight () {
+            if (this._posx <= 535) {
+                this._posx = this._posx + 5;
+            }
+            this.update();
+        }
+        moveUp () {
+            if (this._posy >= 85) {
+                this._posy = this._posy - 5;
+            }
+            this.update();
+        }
+        moveDown () {
+            if (this._posy <= 415) {
+                this._posy = this._posy + 5;
+            }
+            this.update();
+        }
+
+        move (direction_key) {
+            if (direction_key === 0) {
+                const move = setInterval(() => this.moveLeft(), 10);
+                document.addEventListener("keydown", function() {
+                    clearInterval(move);
+                });
+            } else if (direction_key === 1) {
+                const move = setInterval(() => this.moveRight(), 10);
+                document.addEventListener("keydown", function() {
+                    clearInterval(move);
+                });
+            } else if (direction_key === 2) {
+                const move = setInterval(() => this.moveUp(), 10);
+                document.addEventListener("keydown", function() {
+                    clearInterval(move);
+                });
+            } else if (direction_key === 3) {
+                const move = setInterval(() => this.moveDown(), 10);
+                document.addEventListener("keydown", function() {
+                    clearInterval(move);
+                });
+            }
+        }
+
+        spawn (x, y) {
+            if (x <= 535 && x >= 5) {
+                this._posx = x
+            }
+            if (y >= 85 && y <= 415) {
+                this._posy = y
+            }
+            this.update();
+        }
+
+        checkCollision () {
+            if (Math.abs(this._posx - this._game._virus._posx) < 50 && Math.abs(this._posy - this._game._virus._posy) < 50) {
+                if (!this._game._virus._hit) {
+                    this._score += 1;
+                }
+                this._game._virus._hit = true;
+                document.querySelector('#score').innerHTML = `Score: ${this._score}`;
+                let virElement = document.getElementById("vir");
+                virElement.style.visibility = "hidden";
+            } else {
+                this._game._virus.increaseOverlay();
+            }
+        }
+    }
+
+    class Virus {
+        constructor(x, y, game) {
+            this._element = document.getElementById("vir");
+            this._posx = x;
+            this._posy = y;
+            this._dissapeared = null;
+            this._hit = false;
+            this._spawninterval = 1000;
+            this._game = game;
+        }
+
+        update () {
+            this._element.style.left =  this._posx + 'px';
+            this._element.style.top = this._posy + 'px';
+        }
+
+        getSpawnLocation() {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    resolve([Math.floor(Math.random() * 530) + 5, Math.floor(Math.random() * 330) + 85]);
+                }, 500);
+            });
+        }
+
+        increaseOverlay () {
+            if (this._game._dissapearedViruses < 60) {
+                this._game._dissapearedViruses++;
+            }
+            let overlayWidth = this._game._dissapearedViruses * 10;
+            document.getElementById("overlay").style.width = overlayWidth + 'px';
+        }
+
+        async disappear () {
+            if (!this._hit) {
+                this.increaseOverlay();
+                this._hit = true;
+            }
+            if (this._game._dissapearedViruses > 59) {
+                this._game.gameOver();
+            }
+            let element = document.getElementById("vir");
+            element.style.visibility = "hidden";
+            const [px, py] = await this.getSpawnLocation();
+            this.spawn(px, py);
+            element.style.visibility = "visible";
+            this._dissapeared = setTimeout(() => {if(this._game._inGame){this.disappear()}}, this._spawninterval);
+        }
+
+        resetSpawnInterval() {
+            this._spawninterval = 1000;
+        }
+
+        spawn (x, y) {
+            if (x <= 535 && x >= 5) {
+                this._posx = x;
+            }
+            if (y >= 85 && y <= 415) {
+                this._posy = y;
+            }
+            this._hit = false;
+            this.update();
+        }
+    }
+
+    class World {
+        constructor(map_src, sizeX, sizeY) {
+            this._map_src = map_src;
+            this._sizeX = sizeX;
+            this._sizeY = sizeY;
+        }
+        updateWorldMap (){
+            document.getElementById("world").style.width = this._sizeX + "px";
+            document.getElementById("world").style.height = this._sizeY + "px";
+            document.getElementById("world").src = this._map_src;
+        }
+    }
+
+    class Game {
+        constructor() {
+            this._inGame = false;
+            this._dissapearedViruses = 0;
+            this._target = new Player(100, 100, this);
+            this._virus = new Virus(150, 150, this);
+            this._gameTimeInterval = null;
+        }
+
+        playNewGame() {
+            this._virus.resetSpawnInterval();
+            this._target._score = 0;
+            this._dissapearedViruses = 0;
+            this._inGame = true;
+            this._target.update();
+            this._virus.update();
+            this._virus.disappear();
+            document.getElementById("go").style.visibility = "hidden";
+            document.getElementById("gw").style.visibility = "hidden";
+            document.getElementById("player").style.visibility = "visible";
+            document.getElementById("score").style.visibility = "visible";
+            document.querySelector('#score').innerHTML = `Score: 0`;
+            document.getElementById("newGameButton").blur();
+        }
+
+        cursorMovement(e) {
+            if (this._inGame) {
+                let x = e.clientX - 20;
+                let y = e.clientY - 250;
+                this._target.spawn(x, y);
+            }
+        }
+
+        gameOver() {
+            this._inGame = false;
+            document.getElementById("go").style.visibility = "visible";
+            document.getElementById("gw").style.visibility = "visible";
+            document.getElementById("gw").innerHTML = `Final score: ${game._target._score}`;
+            clearInterval(this._gameTimeInterval);
+            clearTimeout(this._virus._dissapeared);
+        }
+
+        isInGame () {
+            return this._inGame;
+        }
+    }
+
+    let game = new Game();
+    let world = new World("earthMap.jpg", 600, 400);
+    world.updateWorldMap();
+
+    document.addEventListener("keydown", game._target);
+
+    document.querySelector("#world").addEventListener("mousemove",function (event) {
+        game.cursorMovement(event);
+    });
+    document.querySelector("#vir").addEventListener("mousemove",function (event) {
+        game.cursorMovement(event);
+    },true);
+    document.querySelector("#player").addEventListener("mousemove",function (event) {
+        game.cursorMovement(event);
+    },true);
+    document.querySelector("#overlay").addEventListener("mousemove",function (event) {
+        game.cursorMovement(event);
+    },true);
+
+    let newGameButton = document.getElementById("newGameButton");
+    let restartButton = document.getElementById("restartButton");
+
+    newGameButton.addEventListener('click',function (e) {
+        e.preventDefault();
+        if (!game.isInGame()) {
+            game.playNewGame();
+        } else {
+            game.gameOver();
+        }
+    });
+
+    restartButton.addEventListener('click',function (e) {
+        e.preventDefault();
+        location.reload();
+    });
+
+</script>
+</body>
+</html>
