@@ -128,6 +128,7 @@
         }
 
         handleEvent(event) {
+            event.preventDefault();
             if (this._game.isInGame()) {
                 if (event.key === 'a') {
                     this.move(0);
