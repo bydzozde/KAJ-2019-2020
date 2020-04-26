@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Lecture 09</title>
+
+    <style>
+        section {
+            display: inline-block;
+        }
+
+        svg {
+            background: lightblue;
+            width: 500px;
+            height: 500px;
+        }
+
+    </style>
+</head>
+<body>
+
+<h2>Test</h2>
+
+<svg id="smiley" width="500" height="300" viewBox="0 0 100 100">
+    <circle id="circle" cx="50" cy="50" r="40" fill="yellow"/>
+    <circle r="5" cx="35" cy="35" />
+    <circle r="5" cx="65" cy="35" />
+    <rect x="59" y="35" width="2" height="12" rx="10" ry="10" fill="blue" />
+    <path d="M 30 67 Q 50 45 70 67"
+          fill="transparent"
+          stroke="black"
+          stroke-width="4"
+          stroke-linecap="round"
+    />
+</svg>
+
+<h2>SVG Paint</h2>
+<ul>
+    <li>LMB &ndash; draw</li>
+    <li>Ctrl/Cmd + Left mouse button &ndash; new path + draw</li>
+    <li>Shift + Left mouse button &ndash; clear</li>
+</ul>
+
+<svg id="svg1"></svg>
+
+<script>
+    /*
+        Docs
+            Positions
+                https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Positions
+            Basics
+                https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Basic_Shapes
+            Paths
+                https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths
+            Bezier curves
+                https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+            Fills and strokes
+                https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Fills_and_Strokes
+
+        Excercises
+            1. Take a look a the docs
+            2. Draw some basic shapes
+            3. Play with "viewbox"
+            4. Draw line paths
+                - use path element
+                - try to create it with createElementNS and setAttributeNS
+            5. Draw bezier paths
+            6. Draw smiley face
+            7. Create SVG painter class
+                a. Listen on svg wrapper click events
+                b. Draw circle at the position of each click
+                c. Draw svg path where user clicked
+                d. Create new path with ctrl/cmd + left mouse button
+                e. Clear svg with shift + left mouse button
+    */
+
+    class SvgPaint {
+        constructor (svg) {
+            this.svg = document.querySelector(svg);
+            this.svgNs = "http://www.w3.org/2000/svg";
+
+            this.svg.addEventListener("click", e => this.clickHandler(e));
+        }
+
+        clickHandler(e) {
+            let x = e.offsetX;
+            let y = e.offsetY;
+
+            if(e.ctrlKey || e.metaKey) {
+                this.createPath();
+                this.draw(x, y);
+            } else if (e.shiftKey) {
+                this.clear();
+            } else {
+                if(!this.path) {
+                    this.createPath()
+                }
+                this.draw(x, y);
+            }
+        }
+
+        clear() {
+            this.svg.innerHTML = "";
+            this.path = null;
+        }
+
+        draw(x, y) {
+                let d = this.path.getAttributeNS(null, "d");
+                if (!d) {
+                    d = `M ${x} ${y}`;
+                } else {
+                    d += ` L ${x} ${y}`;
+                }
+
+                this.path.setAttributeNS(null, "d", d);
+                this.drawVertex(x, y);
+        }
+
+        drawVertex(x, y) {
+            let vertex = document.createElementNS(this.svgNs, "circle");
+            vertex.setAttributeNS(null, "r", "2");
+            vertex.setAttributeNS(null, "cx", x);
+            vertex.setAttributeNS(null, "cy", y);
+            vertex.setAttributeNS(null, "fill", "black");
+
+            this.svg.appendChild(vertex);
+        }
+
+        createPath() {
+            let path = document.createElementNS(this.svgNs, "path");
+            path.setAttributeNS(null, "fill", "transparent");
+            path.setAttributeNS(null, "stroke", "green");
+            path.setAttributeNS(null, "stroke-width", "3px");
+
+            this.svg.appendChild(path);
+            this.path = path;
+        }
+    }
+
+    new SvgPaint("#svg1");
+
+</script>
+
+</body>
+</html>
