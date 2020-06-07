@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Poznámkovník</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        /* General */
+        body {
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+            background-color: lightgrey;
+            height: 100vh;
+            margin: 0;
+        }
+        header {
+            text-align: center;
+            color: white;
+            background-color: green;
+            transition: 3s all;
+        }
+        header:hover {
+            background-color: lightblue;
+            color: blue;
+            transition: 3s all;
+        }
+        section {
+            display: none;
+        }
+        section.visible {
+            display: block;
+        }
+        article.page {
+            margin: 0 10px 10px 10px;
+            flex-grow: 1;
+        }
+        article#fun {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+        }
+        footer {
+            text-align: center;
+        }
+
+        /* Navigation */
+
+        nav {
+            height: 4em;
+            width: 100%;
+            background-color: darkgreen;
+            position: -webkit-sticky; /* Safari */
+            position: sticky;
+            top: 0;
+        }
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+        nav ul li {
+            float: left;
+        }
+        nav ul li a:hover {
+            color: coral;
+            background-color: lightgreen;
+            transition: 1s all;
+            -webkit-transition: 1s all;
+        }
+        nav ul li a {
+            padding: 14px 16px;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+            font-size: 2em;
+            color: white;
+            transition: 1s all;
+            -webkit-transition: 1s all;
+        }
+        .loggedUser a {
+            text-decoration: none;
+        }
+        #logs {
+            display: none;
+        }
+        #logout {
+            float: right;
+            display: none;
+        }
+        #login {
+            float: right;
+        }
+
+        /* Form */
+
+        .formDiv {
+            display: block;
+            text-align: center;
+        }
+        fieldset {
+            display: inline-flex;
+            text-align: center;
+        }
+        legend {
+            text-align: left;
+            background-color: darkgreen;
+            color: white;
+            padding: 5px 8px;
+        }
+        form {
+            margin: auto;
+            text-align: left;
+            align-content: center;
+        }
+        input {
+            width: 250px;
+        }
+        input[type="submit"], input[type="button"] {
+            width: 150px;
+        }
+        *:required:not(:focus) {
+            border: 1px solid red;
+        }
+        .required {
+            font-size: 80%;
+        }
+        .error {
+            color: red;
+        }
+        #loginForm, #registrationForm, #addNoteForm {
+            display: block;
+            align-content: center;
+            align-items: center;
+            width: 400px;
+        }
+        #loginForm *, #registrationForm *, #addNoteForm * {
+            display: block;
+            margin: 5px;
+            align-items: center;
+            align-content: center;
+        }
+        #registrationLink {
+            display: flex;
+        }
+        #registrationLink a {
+            text-decoration: none;
+            font-size: 1em;
+        }
+        #noteContent {
+            width: 360px;
+            height: 200px;
+        }
+
+        /* Notes */
+
+        .note {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px;
+            min-height: 150px;
+            min-width: 200px;
+            max-width: 80vmin;
+            max-height: 80vmin;
+            border: 1px solid coral;
+            border-radius: 8px;
+            box-shadow: 2px 1px 5px grey;
+        }
+        .note:nth-child(2n+1) {
+            background-color: lightgreen;
+        }
+        .note:nth-child(2n) {
+            background-color: lightblue;
+        }
+
+        .hidden {
+            display: none;
+        }
+        .modalActive {
+            text-align: center;
+            -webkit-transform: scale(1.5); /* Safari */
+            transform: scale(1.5);
+            transition: 2s all ease-out;
+            -webkit-transition: 2s all ease-out;
+        }
+        .notes input[type="button"] {
+            width: 100px;
+        }
+
+        /* SVG */
+        svg {
+            background: lightblue;
+            width: 450px;
+            height: 450px;
+        }
+
+        /* Media queries */
+        /* Styles for small devices */
+
+        @media screen and (max-width: 768px) {
+            body {
+                width: 100vw;
+                height: 100vh;
+            }
+            nav {
+                height: 2em;
+            }
+            nav ul li a {
+                padding: 7px 8px;
+                font-size: 1em;
+            }
+            .note {
+                padding: 2px;
+                margin: 2px;
+            }
+            .modalActive {
+                transform: none;
+            }
+            #noteContent {
+                width: 200px;
+            }
+            input {
+                width: 150px;
+            }
+            fieldset {
+                display: block;
+            }
+            #svgSection {
+                display: none;
+            }
+        }
+
+        /* Styles for printing */
+        @media print {
+            nav {
+                display: none;
+            }
+            .note {
+                background-color: white;
+                border: black 1px solid;
+            }
+            .loggedUser {
+                display: none;
+            }
+            article input[type="button"] {
+                display: none;
+            }
+            .modalActive {
+                transform: scale(1);
+            }
+            #svgInfo {
+                display: none;
+            }
+            article#fun {
+                flex-direction: column;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+<header><h1>Poznámkovník</h1></header>
+
+<nav>
+    <ul>
+        <li><a href="#home">Přehled</a></li>
+        <li><a href="#addNote">Přidat poznámku</a></li>
+        <li id="logs"><a href="#logs">Zábava</a></li>
+        <li id="login"><a href="#login">Přihlásit</a></li>
+        <li id="logout"><a href="#logout">Odhlásit</a></li>
+    </ul>
+</nav>
+
+<hr>
+
+<article class="page">
+    <section data-route="#home">
+        <h2>Poznámky</h2>
+        <span class="loggedUser">
+            Vítejte v aplikaci Poznámkovník, která Vám umožní ukládat si snadno poznámky na jednom místě. <br> <br>
+            Pro použití aplikace se prosím <a href="#login">přihlašte</a>.
+        </span>
+        <article class="notes">
+
+        </article>
+
+    </section>
+
+    <section data-route="#login">
+        <h2>Přihášení</h2>
+        <div class="formDiv">
+            <fieldset> <legend>Přihlášení</legend>
+                <form id="loginForm">
+                    <label for="usernameLogin">Uživatelské jméno</label>
+                    <input id="usernameLogin" type="text" placeholder="Uživatelské jméno" required pattern=".{3,}">
+                    <input id="loginSubmitButton" type="submit" value="Přihlásit">
+                    <span id="registrationLink">Ještě nemáte účet? <a href="#registration">Registrovat se</a></span>
+                </form>
+            </fieldset>
+        </div>
+    </section>
+
+    <section data-route="#registration">
+        <h2>Registrace</h2>
+        <div class="formDiv">
+            <fieldset> <legend>Registrace</legend>
+                <form id="registrationForm">
+                    <label for="usernameReg">Uživatelské jméno *</label>
+                    <input id="usernameReg" type="text" placeholder="Uživatelské jméno (alespoň 3 znaky)" required pattern=".{3,}" autocomplete="off">
+                    <span class="required">* Povinný údaj</span>
+                    <input id="registrationSubmitButton" type="submit" value="Založit účet">
+                </form>
+            </fieldset>
+        </div>
+    </section>
+
+    <section data-route="#addNote">
+        <h2>Přidání poznámky</h2>
+        <div class="formDiv">
+            <fieldset> <legend>Přidání poznámky</legend>
+                <form id="addNoteForm">
+                    <label for="noteTitle">Titulek *</label>
+                    <input id="noteTitle" type="text" placeholder="Titulek (alespoň 3 znaky)" required pattern=".{3,}">
+                    <label for="noteDescription">Krátký popis *</label>
+                    <input id="noteDescription" type="text" placeholder="Krátký popis" required pattern=".{1,127}">
+                    <label for="noteContent">Obsah poznámky *</label>
+                    <textarea id="noteContent" placeholder="Obsah" required></textarea>
+                    <span class="required">* Povinný údaj</span>
+                    <input id="addNoteSubmitButton" type="submit" value="Přidat poznámku">
+                </form>
+            </fieldset>
+        </div>
+    </section>
+
+    <section data-route="#logs">
+        <article id="fun">
+            <div id="activity">
+                <h2>Posledních 20 přihlášení</h2>
+                <ul id="historyLogs"></ul>
+            </div>
+            <div id="svgSection">
+                <h2>Malování</h2>
+                <ul id="svgInfo">
+                    <li>Levé tlačítko myši &ndash; nakreslí čáru</li>
+                    <li>Ctrl/Cmd + Levé tlačítko myši &ndash; vytvoří novou cestu</li>
+                    <li>Shift + Levé tlačítko myši &ndash; vyčistí plochu</li>
+                </ul>
+                <svg id="customSvg"></svg>
+
+                <svg id="smiley" width="500" height="300" viewBox="0 0 100 100">
+                    <circle id="circle" cx="50" cy="50" r="40" fill="yellow"/>
+                    <circle r="5" cx="35" cy="35" />
+                    <circle r="5" cx="65" cy="35" />
+                    <rect x="50" y="43" width="3" height="14" rx="10" ry="10" fill="black" />
+                    <path d="M 30 63 Q 50 85 70 63"
+                          fill="transparent"
+                          stroke="black"
+                          stroke-width="4"
+                          stroke-linecap="round"
+                    />
+                </svg>
+            </div>
+        </article>
+    </section>
+</article>
+
+<footer>
+    <hr>
+    &copy;2020 Zdeněk Bydžovský
+</footer>
+
+<script>
+    // Sound
+    const helloSound = new Audio("hello.mp3");
+    const goodbyeSound = new Audio("bye.mp3");
+    const detailSound = new Audio("podrobnostiNote.mp3");
+    const deleteSound = new Audio("smazatNote.mp3");
+
+    // username and indicator if a user is logged in
+    let user = "";
+    let userLogged = false;
+
+    // Validation on add note form
+    function validateNote(e) {
+        e.preventDefault();
+        const noteTitle = document.querySelector("#noteTitle");
+        const noteDescription = document.querySelector("#noteDescription");
+        const noteContent = document.querySelector("#noteContent");
+        let success = true;
+
+        if (noteTitle.value.length < 3) {
+            success = false;
+        }
+        if (noteDescription.value.length > 127 || noteDescription.value.length < 1) {
+            success = false;
+        }
+        if (noteContent.value.length < 1 || noteContent.value.length > 2047) {
+            success = false;
+        }
+        if (success) {
+            const Note = createNote(noteTitle.value, noteDescription.value, noteContent.value);
+            ma.addNoteToUser(user, Note);
+            noteTitle.value = "";
+            noteDescription.value = "";
+            noteContent.value = "";
+            window.location.hash = "#home";
+        }
+    }
+
+    // Creation of new Note
+    function createNote(title, description, content) {
+        return new Note(title, description, content);
+    }
+
+    // Validation of login form
+    function validateLogin(e) {
+        e.preventDefault();
+        const form = document.getElementById("loginForm");
+        const usernameL = document.querySelector("#usernameLogin");
+        let errspn = document.getElementById("errorspnL");
+        if (errspn !== null) {
+            errspn.innerHTML = "";
+        }
+        let success = false;
+
+        if (usernameL.value.length >= 3) {
+            if (ma.userExists(usernameL.value)) {
+                success = true;
+            } else {
+                if (errspn === null) {
+                    errspn = document.createElement("span");
+                    errspn.innerHTML = "Zadané uživatelské jméno neexistuje.";
+                    errspn.classList.add("error");
+                    errspn.id = "errorspnL";
+                    form.appendChild(errspn);
+                    errspn.parentNode.insertBefore(errspn, usernameL.nextSibling);
+                } else {
+                    errspn.innerHTML = "Zadané uživatelské jméno neexistuje.";
+                }
+            }
+        }
+        if (success) {
+            user = usernameL.value;
+            userLogged = true;
+            usernameL.value = "";
+            window.location.hash = "#home";
+            ma.toggleLogin();
+            ma.logVisit();
+            helloSound.play();
+        }
+    }
+
+    // Validation of registration form
+    function validateRegistration(e) {
+        e.preventDefault();
+        const form = document.getElementById("registrationForm");
+        const usernameR = document.querySelector("#usernameReg");
+        let errspn = document.getElementById("errorspnR");
+        if (errspn !== null) {
+            errspn.innerHTML = "";
+        }
+        let success = false;
+
+        if (usernameR.value.length > 3) {
+            // If selected username does not exist already, it is OK
+            if (!ma.userExists(usernameR.value)) {
+                success = true;
+            } else {
+                if (errspn === null) {
+                    errspn = document.createElement("span");
+                    errspn.innerHTML = "Zadané uživatelské jméno již existuje.";
+                    errspn.classList.add("error");
+                    errspn.id = "errorspnR";
+                    form.appendChild(errspn);
+                    errspn.parentNode.insertBefore(errspn, usernameR.nextSibling);
+                } else {
+                    errspn.innerHTML = "Zadané uživatelské jméno již existuje.";
+                }
+            }
+        }
+        if (success) {
+            ma.createUser(usernameR.value);
+            ma.addUser(usernameR.value);
+            user = usernameR.value;
+            userLogged = true;
+            usernameR.value = "";
+            window.location.hash = "#addNote";
+            ma.toggleLogin();
+            ma.logVisit();
+            helloSound.play();
+        }
+    }
+
+    // Class responsible for validating forms
+    class Validator {
+        constructor() {
+            const formL = document.querySelector("#loginForm");
+            const formR = document.querySelector("#registrationForm");
+            const noteForm = document.querySelector("#addNoteForm");
+
+            formL.addEventListener("submit", validateLogin);
+            formR.addEventListener("submit", validateRegistration);
+            noteForm.addEventListener("submit", validateNote);
+        }
+    }
+
+    // Class representing the application
+    class MyApp {
+        constructor() {
+            this.pages = document.querySelectorAll("section");
+            this.modalVisible = false;
+
+            this.route();
+
+            window.addEventListener('popstate', e => {
+                this.route();
+            });
+
+        }
+
+        // Method loading pages based on hash in URL
+        route() {
+            const hash = window.location.hash;
+
+            switch (hash) {
+                case "#home":
+                    const userInfo = document.querySelector(".loggedUser");
+                    this.resetModal();
+                    if (userLogged) {
+                        userInfo.innerHTML = "Přihlášený uživatel: " + user;
+                        this.clearNotes();
+                        let notes = this.getUserNotes(user);
+                        this.drawNotes(notes);
+                    } else {
+                        userInfo.innerHTML = " Vítejte v aplikaci Poznámkovník, která Vám umožní ukládat si snadno poznámky na jednom místě. <br>\n <br>\n" +
+                            "Pro použití aplikace se prosím <a href=\"#login\">přihlašte</a>.";
+                    }
+                    this.changePage(hash);
+                    break;
+                case "#addNote":
+                    if (user === "") {
+                        alert("Pro přidání poznámky se prosím přihlašte.");
+                        this.changePage("#login");
+                        break;
+                    }
+                    this.changePage(hash);
+                    break;
+                case "#login": this.changePage(hash); break;
+                case "#registration": this.changePage(hash); break;
+                case "#logs":
+                    this.showLogs();
+                    this.changePage(hash);
+                    break;
+                case "#logout":
+                    this.logout();
+                    this.changePage("#login");
+                    break;
+                default:
+                    this.changePage("#home");
+            }
+
+            document.title = window.location.hash
+        }
+
+        // Method for page changing
+        changePage(section) {
+            this.pages.forEach(page => {
+                if (page.getAttribute("data-route") === section) {
+                    page.classList.add("visible");
+                } else {
+                    page.classList.remove("visible")
+                }
+            })
+        }
+
+        // Adds new user to localStorage
+        addUser(username) {
+            const users = this.getUsers();
+            users.push(username);
+            const jsonUsers = JSON.stringify(users);
+            localStorage.setItem("users", jsonUsers);
+        }
+
+        // Returns all registered users
+        getUsers() {
+            return JSON.parse(localStorage.getItem("users")) || [];
+        }
+
+        // Returns True if given username does exist in localStorage
+        userExists(username) {
+            return ma.getUsers().includes(username);
+        }
+
+        // Creates new user with default notes and logs in localStorage
+        createUser(username) {
+            const notes = [];
+            const jsonNotes = JSON.stringify(notes);
+            const logs = [];
+            const jsonLogs = JSON.stringify(logs);
+            const userlogs = username + "logs";
+            localStorage.setItem(username, jsonNotes);
+            localStorage.setItem(userlogs, jsonLogs);
+        }
+
+        // Adds Note to user in localStorage
+        addNoteToUser(username, Note) {
+            let notes = this.getUserNotes(username);
+            notes.push(Note);
+            const jsonNotes = JSON.stringify(notes);
+            localStorage.setItem(username, jsonNotes);
+        }
+
+        // Returns Notes of given user
+        getUserNotes(username) {
+            return JSON.parse(localStorage.getItem(username));
+        }
+
+        // Removes Note from localStorage
+        deleteNote(Note) {
+            let notes = this.getUserNotes(user);
+            let toDelete = -1;
+            for (let i = 0; i < notes.length; i++) {
+                if ((notes[i].title === Note.title) && (notes[i].description === Note.description) && (notes[i].content === Note.content)) {
+                    toDelete = i;
+                    break;
+                }
+            }
+            if (toDelete > -1) {
+                notes.splice(toDelete, 1);
+            }
+            const jsonNotes = JSON.stringify(notes);
+            localStorage.setItem(user, jsonNotes);
+            this.resetModal();
+            this.route();
+            deleteSound.play();
+        }
+
+        // Sets modal element to inactive
+        resetModal() {
+            if (this.modalVisible) {
+                this.modalVisible = !this.modalVisible;
+                let article = document.querySelector(".notes");
+                article.classList.remove("modalActive");
+            }
+        }
+
+        // Draws user Notes to page
+        drawNotes(notes) {
+            const article = document.querySelector(".notes");
+
+            for (let i = 0; i < notes.length; i++) {
+                let div = document.createElement("div");
+                let noteTitle = document.createElement("h3");
+                let noteDescription = document.createElement("p");
+                let noteContent = document.createElement("p");
+                let toggleButtonClose = document.createElement("input");
+                let toggleButtonOpen = document.createElement("input");
+                let deleteButton = document.createElement("input");
+
+                div.id = i + "div";
+                noteTitle.id = i + "noteTitle";
+                noteDescription.id = i + "noteDescription";
+                noteContent.id = i + "noteContent";
+                toggleButtonClose.id = i + "toggleButtonClose";
+                toggleButtonOpen.id = i + "toggleButtonOpen";
+                deleteButton.id = i + "deleteButton";
+
+                div.classList.add("note");
+                div.style.position = "relative";
+                noteTitle.textContent = notes[i].title;
+                noteDescription.textContent = notes[i].description;
+                noteContent.textContent = notes[i].content;
+                noteContent.classList.add("hidden");
+
+                toggleButtonClose.type = "button";
+                toggleButtonClose.classList.add("hidden");
+                toggleButtonClose.classList.add("toggleButton");
+                toggleButtonClose.value = "Zpět";
+                toggleButtonClose.style.position = "absolute";
+                toggleButtonClose.style.left = "5px";
+                toggleButtonClose.style.bottom = "5px";
+
+                toggleButtonOpen.type = "button";
+                toggleButtonOpen.classList.add("toggleButton");
+                toggleButtonOpen.value = "Podrobnosti";
+                toggleButtonOpen.style.position = "absolute";
+                toggleButtonOpen.style.left = "5px";
+                toggleButtonOpen.style.bottom = "5px";
+
+                deleteButton.type = "button";
+                deleteButton.value = "Smazat";
+                deleteButton.classList.add("deleteNote");
+                deleteButton.style.position = "absolute";
+                deleteButton.style.right = "5px";
+                deleteButton.style.bottom = "5px";
+
+                toggleButtonOpen.addEventListener("click", () =>
+                    ma.toggleModalState(i + "div", i + "noteTitle", i + "noteDescription", i + "noteContent", i + "toggleButtonClose", i + "toggleButtonOpen"));
+
+                toggleButtonClose.addEventListener("click", () =>
+                    ma.toggleModalState(i + "div", i + "noteTitle", i + "noteDescription", i + "noteContent", i + "toggleButtonClose", i + "toggleButtonOpen"));
+
+                deleteButton.addEventListener("click", () => ma.deleteNote(notes[i]));
+
+                div.appendChild(noteTitle);
+                div.appendChild(noteDescription);
+                div.appendChild(noteContent);
+                div.appendChild(toggleButtonOpen);
+                div.appendChild(toggleButtonClose);
+                div.appendChild(deleteButton);
+                article.appendChild(div);
+            }
+        }
+
+        // Clears page from notes
+        clearNotes() {
+            const article = document.querySelector(".notes");
+            article.innerHTML = "";
+        }
+
+        // Logout the user
+        logout() {
+            this.clearNotes();
+            document.querySelector(".loggedUser").innerHTML = "";
+            user = "";
+            userLogged = false;
+            this.toggleLogin();
+            goodbyeSound.play();
+        }
+
+        // Toggles login - hides what should be hidden, shows what should be shown
+        toggleLogin() {
+            if (user === "") {
+                const login = document.getElementById("login");
+                login.style.display = "inline";
+                const logout = document.getElementById("logout");
+                logout.style.display = "none";
+                const logs = document.getElementById("logs");
+                logs.style.display = "none";
+            } else {
+                const login = document.getElementById("login");
+                login.style.display = "none";
+                const logout = document.getElementById("logout");
+                logout.style.display = "inline";
+                const logs = document.getElementById("logs");
+                logs.style.display = "inline";
+            }
+        }
+
+        // Toggles modal element - clicked div is displayed, others are hidden
+        toggleModalState(divID, titleID, descriptionID, contentID, toggleButtonCloseID, toggleButtonOpenID) {
+            this.modalVisible = !this.modalVisible;
+            let article = document.querySelector(".notes");
+            let description = document.getElementById(descriptionID);
+            let content = document.getElementById(contentID);
+            let toggleButtonClose = document.getElementById(toggleButtonCloseID);
+            let toggleButtonOpen = document.getElementById(toggleButtonOpenID);
+
+            if (this.modalVisible) {
+                this.hideOtherNotes(divID);
+                article.classList.add("modalActive");
+                description.classList.add("hidden");
+                content.classList.remove("hidden");
+                toggleButtonClose.classList.remove("hidden");
+                toggleButtonOpen.classList.add("hidden");
+                detailSound.play();
+            } else {
+                article.classList.remove("modalActive");
+                description.classList.remove("hidden");
+                content.classList.add("hidden");
+                toggleButtonClose.classList.add("hidden");
+                toggleButtonOpen.classList.remove("hidden");
+                this.route();
+            }
+        }
+
+        // Hide all Notes except one with given ID
+        hideOtherNotes(noteID) {
+            let notes = document.querySelectorAll(".note");
+            for (let i = 0; i < notes.length; i++) {
+                if (notes[i].id !== noteID) {
+                    notes[i].classList.add("hidden");
+                }
+            }
+        }
+
+        // Logs visit when user logs in
+        logVisit() {
+            const date = new Date().toLocaleString("cs-CS");
+            const logs = this.getUserLogs(user);
+            if (logs.length > 19) {
+                logs.splice(0, 1); // oldest log is removed
+            }
+            logs.push(date);
+
+            const userlogs = user + "logs";
+            localStorage.setItem(userlogs, JSON.stringify(logs));
+
+        }
+
+        // Draws visit logs to page
+        showLogs() {
+            const target = document.querySelector("#historyLogs");
+            target.innerHTML = "";
+            const logs = this.getUserLogs(user);
+
+            for (const date of logs) {
+                const li = document.createElement("li");
+                li.innerHTML = date;
+                target.appendChild(li);
+            }
+        }
+
+        // Returns visit logs of given user
+        getUserLogs(username) {
+            const userlogs = username + "logs";
+            return JSON.parse(localStorage.getItem(userlogs));
+        }
+    }
+
+    // Class for painting into svg element
+    class SvgPaint {
+        constructor (svg) {
+            this.svg = document.querySelector(svg);
+            this.svgNs = "http://www.w3.org/2000/svg";
+
+            this.svg.addEventListener("click", e => this.clickHandler(e));
+        }
+
+        // Handles click event
+        clickHandler(e) {
+            let x = e.offsetX;
+            let y = e.offsetY;
+
+            if(e.ctrlKey || e.metaKey) {
+                this.createPath();
+                this.draw(x, y);
+            } else if (e.shiftKey) {
+                this.clear();
+            } else {
+                if(!this.path) {
+                    this.createPath()
+                }
+                this.draw(x, y);
+            }
+        }
+
+        // Clears svg element
+        clear() {
+            this.svg.innerHTML = "";
+            this.path = null;
+        }
+
+        // Draws path into the svg element
+        draw(x, y) {
+            let d = this.path.getAttributeNS(null, "d");
+            if (!d) {
+                d = `M ${x} ${y}`;
+            } else {
+                d += ` L ${x} ${y}`;
+            }
+
+            this.path.setAttributeNS(null, "d", d);
+            this.drawVertex(x, y);
+        }
+
+        // Draws vertex into svg element based on x,y of the click event
+        drawVertex(x, y) {
+            let vertex = document.createElementNS(this.svgNs, "circle");
+            vertex.setAttributeNS(null, "r", "2");
+            vertex.setAttributeNS(null, "cx", x);
+            vertex.setAttributeNS(null, "cy", y);
+            vertex.setAttributeNS(null, "fill", "black");
+
+            this.svg.appendChild(vertex);
+        }
+
+        // Creates path in svg element
+        createPath() {
+            let path = document.createElementNS(this.svgNs, "path");
+            path.setAttributeNS(null, "fill", "transparent");
+            path.setAttributeNS(null, "stroke", "green");
+            path.setAttributeNS(null, "stroke-width", "3px");
+
+            this.svg.appendChild(path);
+            this.path = path;
+        }
+    }
+
+    // Class representing a note
+    class Note {
+        constructor(title, description, content) {
+            this.title = title;
+            this.description = description;
+            this.content = content;
+        }
+    }
+
+    // Run
+    const ma = new MyApp();
+    new Validator();
+    new SvgPaint("#customSvg");
+
+</script>
+</body>
+</html>
